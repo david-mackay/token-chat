@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client'
 
 import React, { useState } from 'react'
@@ -22,12 +21,12 @@ export default function HomePage(): React.ReactElement {
     event.preventDefault()
     
     if (!tokenAddress.trim()) {
-      setError('Please enter a token address')
+      setError('INPUT_REQUIRED: TOKEN_ADDRESS')
       return
     }
 
     if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(tokenAddress)) {
-      setError('Please enter a valid Solana token address')
+      setError('INVALID_INPUT: SOLANA_TOKEN_ADDRESS_REQUIRED')
       return
     }
 
@@ -35,31 +34,34 @@ export default function HomePage(): React.ReactElement {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-500 to-purple-600 p-6">
-      <div className="max-w-xl mx-auto space-y-8">
-        <div className="flex justify-end">
+    <main className="min-h-screen bg-black p-4 md:p-6">
+      <div className="max-w-xl mx-auto space-y-4 md:space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-3xl md:text-4xl font-mono text-green-500">
+            &gt;_ Token Terminal
+          </h1>
           <button
             onClick={handleConnect}
-            className="bg-white/10 backdrop-blur-sm text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 transition-colors"
+            className="w-full sm:w-auto bg-black border border-green-500 font-mono text-green-500 px-4 py-2 
+                     hover:bg-green-500 hover:text-black transition-colors duration-300"
           >
             {isConnected ? 
-              `${address?.slice(0, 4)}...${address?.slice(-4)}` : 
-              'Connect Wallet'}
+              `ADDR: ${address?.slice(0, 4)}...${address?.slice(-4)}` : 
+              'CONNECT_WALLET'}
           </button>
         </div>
 
-        <div className="text-center mt-12 mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4">Token Chat</h1>
-          <p className="text-xl text-white/90">
-            Join token-specific chat rooms and discuss with other holders
+        <div className="text-left mt-8 mb-8">
+          <p className="text-lg text-green-500/80">
+            {'>'} SELECT_TOKEN_ROOM
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl p-8">
-          <form onSubmit={handleJoinChat} className="space-y-6">
+        <div className="bg-black border border-green-500 p-4 md:p-6">
+          <form onSubmit={handleJoinChat} className="space-y-4">
             <div>
-              <label htmlFor="tokenAddress" className="block text-gray-700 font-medium mb-2">
-                Enter Token Address
+              <label htmlFor="tokenAddress" className="block text-green-500 font-mono mb-2">
+                TOKEN_ADDRESS:
               </label>
               <input
                 type="text"
@@ -69,19 +71,22 @@ export default function HomePage(): React.ReactElement {
                   setTokenAddress(e.target.value)
                   setError(null)
                 }}
-                placeholder="Solana token address"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="ENTER_SOLANA_TOKEN_ADDRESS"
+                className="w-full px-4 py-3 bg-black border border-green-500 text-green-500 font-mono
+                         focus:ring-1 focus:ring-green-500 focus:border-green-500 
+                         placeholder:text-green-500/50"
               />
               {error && (
-                <p className="mt-2 text-red-500 text-sm">{error}</p>
+                <p className="mt-2 text-red-500 text-sm font-mono">{error}</p>
               )}
             </div>
             
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full bg-green-500 text-black font-mono px-6 py-3
+                       hover:bg-green-600 transition-colors"
             >
-              Join Chat Room
+              INITIALIZE_CHAT()
             </button>
           </form>
         </div>

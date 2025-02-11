@@ -1,21 +1,30 @@
-// src/app/tc/[tokenAddress]/page.tsx
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useAppKit } from "@reown/appkit/react"
 import { useAppKitAccount } from "@reown/appkit/react"
-import { io, Socket } from 'socket.io-client'
+import { useAppKitProvider } from '@reown/appkit/react'
+import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { ChatWindow } from '@/components/Chat/ChatWindow'
 import { MessageInput } from '@/components/Chat/MessageInput'
 import { PriceDisplay } from '@/components/TokenPrice/PriceDisplay'
 import { generateColorFromAddress } from '@/utils/colorGeneration'
-import type { WebSocketMessage, ChatMessage, WebSocketStatus } from '@/types/websocket'
+import type { ChatMessage } from '@/types/websocket'
+import { io, Socket } from 'socket.io-client'
 
 interface PageState {
   messages: ChatMessage[];
-  wsStatus: WebSocketStatus;
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   error: string | null;
+  price: number | null;
+  sessionToken: string | null;
+}
+
+interface AuthCredentials {
+  auth_message: string;
+  signature: string;
+  wallet_address: string;
 }
 
 export default function TokenChatPage(): React.ReactElement {
@@ -24,74 +33,138 @@ export default function TokenChatPage(): React.ReactElement {
   
   const { open } = useAppKit()
   const { address, isConnected } = useAppKitAccount()
+  const { walletProvider } = useAppKitProvider<Provider>('solana')
   
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [authCredentials, setAuthCredentials] = useState<AuthCredentials | null>(null);
   const [pageState, setPageState] = useState<PageState>({
     messages: [],
-    wsStatus: 'connecting',
-    error: null
+    connectionStatus: 'connecting',
+    error: null,
+    price: null,
+    sessionToken: null
   });
 
-  useEffect(() => {
-    const socketIO = io(process.env.NEXT_PUBLIC_WEBSOCKET_URL || '', {
-      query: { token_address: tokenAddress },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5
-    });
-
-    socketIO.on('connect', () => {
+  // First, handle wallet authentication
+  const getAuthCredentials = async () => {
+    if (!isConnected || !address || !walletProvider) {
       setPageState(prev => ({
         ...prev,
-        wsStatus: 'connected',
+        connectionStatus: 'disconnected',
+        error: 'Please connect your wallet'
+      }));
+      return null;
+    }
+
+    try {
+      const timestamp = Date.now();
+      const message = `Authenticate chat access for token ${tokenAddress} at ${timestamp}`;
+      const encodedMessage = new TextEncoder().encode(message);
+
+      console.log('Requesting wallet signature...');
+      const signature = await walletProvider.signMessage(encodedMessage);
+      const signatureHex = Buffer.from(signature).toString('hex');
+
+      return {
+        auth_message: message,
+        signature: signatureHex,
+        wallet_address: address
+      };
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setPageState(prev => ({
+        ...prev,
+        connectionStatus: 'error',
+        error: 'Failed to sign message'
+      }));
+      return null;
+    }
+  };
+
+  // Handle initial authentication when wallet connects
+  useEffect(() => {
+    const authenticate = async () => {
+      const credentials = await getAuthCredentials();
+      if (credentials) {
+        setAuthCredentials(credentials);
+      }
+    };
+
+    if (isConnected && !authCredentials) {
+      authenticate();
+    }
+  }, [isConnected, address]);
+
+  // Only establish socket connection after we have auth credentials
+  useEffect(() => {
+    if (!authCredentials) return;
+
+    console.log('Setting up socket connection with auth credentials...');
+    const socketUrl = `${process.env.NEXT_PUBLIC_API_URL}`;
+    const newSocket = io(socketUrl, {
+      query: {
+        token_address: tokenAddress,
+        ...authCredentials
+      },
+      transports: ['websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Socket connected');
+      setPageState(prev => ({
+        ...prev,
+        connectionStatus: 'connected',
         error: null
       }));
     });
 
-    socketIO.on('disconnect', () => {
+    newSocket.on('auth_success', (response: { session_token: string }) => {
+      console.log('Authentication successful');
       setPageState(prev => ({
         ...prev,
-        wsStatus: 'disconnected',
-        error: 'Connection lost. Attempting to reconnect...'
+        sessionToken: response.session_token,
+        error: null
       }));
     });
 
-    socketIO.on('connect_error', (error) => {
+    newSocket.on('auth_error', (error: string) => {
+      console.log('Authentication failed:', error);
+      setPageState(prev => ({
+        ...prev,
+        connectionStatus: 'error',
+        error: 'Authentication failed',
+        sessionToken: null
+      }));
+      // Clear auth credentials to allow retry
+      setAuthCredentials(null);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected');
+      setPageState(prev => ({
+        ...prev,
+        connectionStatus: 'disconnected',
+        error: 'Connection lost. Attempting to reconnect...',
+        sessionToken: null
+      }));
+    });
+
+    newSocket.on('connect_error', (error) => {
       console.error('Connection error:', error);
       setPageState(prev => ({
         ...prev,
-        wsStatus: 'error',
-        error: 'Failed to connect. Please try again later.'
+        connectionStatus: 'error',
+        error: 'Failed to connect. Please try again later.',
+        sessionToken: null
       }));
     });
 
-    socketIO.on('chat_message', (message: WebSocketMessage) => {
+    newSocket.on('message_history', (data) => {
       try {
-        const chatMessage = message.data as ChatMessage;
-        setPageState(prev => {
-          const messageExists = prev.messages.some(msg => msg.id === chatMessage.id);
-          if (messageExists) {
-            return prev;
-          }
-          
-          return {
-            ...prev,
-            messages: [...prev.messages, {
-              ...chatMessage,
-              colorCode: generateColorFromAddress(chatMessage.walletAddress)
-            }]
-          };
-        });
-      } catch (error) {
-        console.error('Error processing message:', error);
-      }
-    });
-
-    socketIO.on('message_history', (message: { type: 'message_history', data: ChatMessage[] }) => {
-      try {
-        const messages = message.data;
+        const messages = data.data as ChatMessage[];
         setPageState(prev => ({
           ...prev,
           messages: messages.map(msg => ({
@@ -104,35 +177,57 @@ export default function TokenChatPage(): React.ReactElement {
       }
     });
 
-    setSocket(socketIO);
+    newSocket.on('chat_message', (data) => {
+      try {
+        const message = data.data as ChatMessage;
+        setPageState(prev => ({
+          ...prev,
+          messages: [...prev.messages, {
+            ...message,
+            colorCode: generateColorFromAddress(message.walletAddress)
+          }]
+        }));
+      } catch (error) {
+        console.error('Error processing chat message:', error);
+      }
+    });
+
+    newSocket.on('price_update', (data) => {
+      try {
+        setPageState(prev => ({
+          ...prev,
+          price: data.data.price
+        }));
+      } catch (error) {
+        console.error('Error processing price update:', error);
+      }
+    });
+
+    setSocket(newSocket);
 
     return () => {
-      socketIO.disconnect();
+      console.log('Cleaning up socket connection');
+      newSocket.close();
+      setSocket(null);
     };
-  }, [tokenAddress]);
+  }, [authCredentials, tokenAddress]);
 
   const handleSendMessage = async (content: string) => {
-    if (!socket || !isConnected || !address) {
+    if (!isConnected || !address || !socket || !pageState.sessionToken) {
       return;
     }
-
+  
     try {
-      const message: ChatMessage = {
-        id: crypto.randomUUID(),
+      const message = {
         content,
         walletAddress: address,
         tokenAddress: tokenAddress,
         timestamp: new Date().toISOString(),
+        session_token: pageState.sessionToken,
         colorCode: generateColorFromAddress(address)
       };
-
+  
       socket.emit('chat_message', message);
-
-      // Optimistic update
-      setPageState(prev => ({
-        ...prev,
-        messages: [...prev.messages, message]
-      }));
     } catch (error) {
       console.error('Error sending message:', error);
       setPageState(prev => ({
@@ -146,72 +241,67 @@ export default function TokenChatPage(): React.ReactElement {
     event.preventDefault();
     open();
   };
-
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-500 to-purple-600 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center mb-8">
-          <div className="text-left">
-            <h1 className="text-4xl font-bold text-white mb-2">Token Chat</h1>
-            <p className="text-white/90">
-              {pageState.wsStatus === 'connected' ? 
-                `Discussing ${tokenAddress}` : 
-                'Connecting to chat server...'}
-            </p>
-          </div>
-          <button
-            onClick={handleConnect}
-            className="bg-white/10 backdrop-blur-sm text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 transition-colors"
-          >
-            {isConnected ? 
-              `${address?.slice(0, 4)}...${address?.slice(-4)}` : 
-              'Connect Wallet'}
-          </button>
-        </div>
   
-        {/*TODO: FIX TIMESTAMP PARSING*/}
-        {pageState.error && (
-          <div className="bg-red-500/10 backdrop-blur-sm rounded-lg p-4 text-white text-center">
-            {pageState.error}
-          </div>
-        )}
+  return (
+    <div className="flex flex-col h-screen">
+      {/* Sticky Header with Price Display */}
+      <div className="sticky top-0 z-10 border-b border-green-500 bg-black">
+        <PriceDisplay
+          tokenAddress={tokenAddress}
+          price={pageState.price}
+          connectionStatus={pageState.connectionStatus}
+        />
+      </div>
 
-        {!isConnected ? (
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center">
-            <p className="text-white mb-4">Connect your wallet to join the conversation</p>
+      {pageState.error && (
+        <div className="bg-red-900/20 border border-red-500 font-mono text-red-500 p-2 text-center">
+          ERROR: {pageState.error}
+        </div>
+      )}
+
+      {!isConnected ? (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="bg-black border border-green-500 p-6 text-center w-full max-w-md">
+            <p className="text-green-500 font-mono mb-4">
+              AUTH_REQUIRED: CONNECT WALLET TO ACCESS TERMINAL
+            </p>
             <button
               onClick={handleConnect}
-              className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+              className="bg-green-500 text-black font-mono px-6 py-3 
+                       hover:bg-green-600 transition-colors duration-300"
             >
-              Connect Wallet
+              INITIALIZE_CONNECTION()
             </button>
           </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-            {socket && (
-              <div className="p-4 border-b">
-                <PriceDisplay 
-                  tokenAddress={tokenAddress} 
-                  socket={socket}
-                  connectionStatus={pageState.wsStatus}
-                />
-              </div>
-            )}
-
-            <div className="flex flex-col h-[600px]">
-              <ChatWindow
-                messages={pageState.messages}
-                currentUserAddress={address}
-                isLoading={pageState.wsStatus === 'connecting'}
-              />
-              <MessageInput
-                onSendMessage={handleSendMessage}
-                disabled={!socket || !socket.connected} 
-              />
-            </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-hidden">
+            <ChatWindow
+              messages={pageState.messages}
+              currentUserAddress={address}
+              isLoading={pageState.connectionStatus === 'connecting'}
+            />
           </div>
-        )}
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            disabled={pageState.connectionStatus !== 'connected' || !pageState.sessionToken}
+          />
+        </div>
+      )}
+
+      {/* Fixed bottom wallet button */}
+      <div className="border-t border-green-500 p-2 bg-black">
+        <button
+          onClick={handleConnect}
+          className="w-full bg-black border border-green-500 font-mono text-green-500 px-4 py-2 
+                   hover:bg-green-500 hover:text-black transition-colors duration-300"
+        >
+          {isConnected ? 
+            `ADDR: ${address?.slice(0, 4)}...${address?.slice(-4)}` : 
+            'CONNECT_WALLET'}
+        </button>
       </div>
-    </main>
+    </div>
   );
 }

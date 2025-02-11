@@ -1,98 +1,72 @@
 // src/components/TokenPrice/PriceDisplay.tsx
-import React, { useState, useEffect } from 'react';
-import { Socket } from 'socket.io-client';
+import React from 'react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { WebSocketStatus } from '@/types/websocket';
 
-
 interface PriceDisplayProps {
   tokenAddress: string;
-  socket: Socket;
-  connectionStatus: WebSocketStatus;  // Add this prop
-}
-
-interface PriceData {
-  tokenAddress: string;
-  price: number;
-  tokenName: string | null;
-  tokenSymbol: string | null;
-  timestamp: string;
+  price: number | null;
+  connectionStatus: WebSocketStatus;
 }
 
 export function PriceDisplay({ 
   tokenAddress, 
-  socket,
+  price,
   connectionStatus 
 }: PriceDisplayProps): React.ReactElement {
-  const [priceData, setPriceData] = useState<PriceData | null>(null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+  const [lastUpdateTime, setLastUpdateTime] = React.useState<string>('');
 
-  useEffect(() => {
-    socket.on('price_update', (message: { type: string; data: PriceData }) => {
-      try {
-        if (message.data.tokenAddress === tokenAddress) {
-          setPriceData(message.data);
-          const utcDate = parseISO(message.data.timestamp);
-          setLastUpdateTime(formatDistanceToNow(utcDate, {
-            addSuffix: true,
-            includeSeconds: true
-          }));
-        }
-      } catch (error) {
-        console.error('Error processing price update:', error);
-      }
-    });
-
-    return () => {
-      socket.off('price_update');
-    };
-  }, [tokenAddress, socket]);
+  React.useEffect(() => {
+    if (price !== null) {
+      const now = new Date();
+      setLastUpdateTime(formatDistanceToNow(now, {
+        addSuffix: true,
+        includeSeconds: true,
+      }));
+    }
+  }, [price]);
 
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-32 mb-2"></div>
-        <div className="h-6 bg-gray-200 rounded w-24"></div>
+      <div className="p-4">
+        <div className="font-mono text-green-500/50 animate-pulse">
+          FETCHING_PRICE_DATA...
+        </div>
       </div>
     );
   }
-
-  if (connectionStatus === 'error' || !priceData) {
+  
+  if (connectionStatus === 'error' || price === null) {
     return (
-      <div className="text-red-500 text-sm flex items-center gap-2">
-        <span className="inline-block w-2 h-2 bg-red-500 rounded-full"></span>
-        Unable to load price data. Please check your connection.
+      <div className="p-4 font-mono text-red-500 flex items-center gap-2">
+        <span className="inline-block w-2 h-2 bg-red-500"></span>
+        ERROR: PRICE_DATA_UNAVAILABLE
       </div>
     );
   }
 
   return (
-    <div className="flex justify-between items-center">
-      <div>
-        <div className="flex items-baseline gap-2">
-          <h2 className="text-2xl font-bold">
-            ${priceData.price.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 6
-            })}
-          </h2>
-          {priceData.tokenSymbol && (
-            <span className="text-gray-600">{priceData.tokenSymbol}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className={`w-2 h-2 rounded-full ${
-            connectionStatus === 'connected' ? 'bg-green-500' : 'bg-gray-500'
-          }`}></span>
-          Updated {lastUpdateTime}
-        </div>
-      </div>
-      {priceData.tokenName && (
-        <div className="text-right">
-          <div className="text-sm text-gray-600">Token Name</div>
-          <div className="font-medium">{priceData.tokenName}</div>
-        </div>
-      )}
-    </div>
+<div className="flex flex-col p-4">
+  <div className="flex items-center gap-2 mb-1">
+    <span className={`w-2 h-2 ${
+      connectionStatus === 'connected' ? 'bg-green-500' : 'bg-gray-500'
+    }`}></span>
+    <span className="font-mono text-sm text-green-500/70 overflow-hidden text-ellipsis">
+      {`${tokenAddress.slice(0, 4)}...${tokenAddress.slice(-4)}`}
+    </span>
+  </div>
+  
+  <div className="flex items-baseline gap-2">
+    <h2 className="text-2xl font-mono font-bold text-green-500">
+      ${price.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6
+      })}
+    </h2>
+    <span className="text-xs font-mono text-green-500/70">
+      {lastUpdateTime || 'NOW'}
+    </span>
+  </div>
+</div>
   );
 }

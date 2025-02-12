@@ -1,6 +1,6 @@
 // src/components/TokenPrice/PriceDisplay.tsx
 import React from 'react';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { WebSocketStatus } from '@/types/websocket';
 
 interface PriceDisplayProps {

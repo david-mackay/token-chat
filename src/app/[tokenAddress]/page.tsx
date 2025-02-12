@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useAppKit } from "@reown/appkit/react"
 import { useAppKitAccount } from "@reown/appkit/react"
@@ -46,7 +46,7 @@ export default function TokenChatPage(): React.ReactElement {
   });
 
   // First, handle wallet authentication
-  const getAuthCredentials = async () => {
+  const getAuthCredentials = useCallback(async () => {
     if (!isConnected || !address || !walletProvider) {
       setPageState(prev => ({
         ...prev,
@@ -55,16 +55,16 @@ export default function TokenChatPage(): React.ReactElement {
       }));
       return null;
     }
-
+  
     try {
       const timestamp = Date.now();
       const message = `Authenticate chat access for token ${tokenAddress} at ${timestamp}`;
       const encodedMessage = new TextEncoder().encode(message);
-
+  
       console.log('Requesting wallet signature...');
       const signature = await walletProvider.signMessage(encodedMessage);
       const signatureHex = Buffer.from(signature).toString('hex');
-
+  
       return {
         auth_message: message,
         signature: signatureHex,
@@ -79,7 +79,7 @@ export default function TokenChatPage(): React.ReactElement {
       }));
       return null;
     }
-  };
+  }, [isConnected, address, walletProvider, tokenAddress]);
 
   // Handle initial authentication when wallet connects
   useEffect(() => {
@@ -89,11 +89,11 @@ export default function TokenChatPage(): React.ReactElement {
         setAuthCredentials(credentials);
       }
     };
-
+  
     if (isConnected && !authCredentials) {
       authenticate();
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, authCredentials, getAuthCredentials]);
 
   // Only establish socket connection after we have auth credentials
   useEffect(() => {

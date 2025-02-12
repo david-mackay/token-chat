@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { AppKit } from '../context/appkit'
+import { Analytics } from "@vercel/analytics/react"
+
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
       <body className="min-h-screen bg-black font-mono text-green-500">
         <AppKit>{children}</AppKit>
       </body>
+      <Analytics/>
     </html>
   )
 }

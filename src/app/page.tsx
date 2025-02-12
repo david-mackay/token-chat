@@ -4,12 +4,14 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppKit } from "@reown/appkit/react"
 import { useAppKitAccount } from "@reown/appkit/react"
+import { Terminal } from 'lucide-react'
+import { ActiveRooms } from '@/components/ActiveRooms'
 
 export default function HomePage(): React.ReactElement {
   const router = useRouter()
   const { open } = useAppKit()
   const { address, isConnected } = useAppKitAccount()
-  const [tokenAddress, setTokenAddress] = useState('')
+  const [tokenAddress, setTokenAddress] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
 
   const handleConnect = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -17,7 +19,7 @@ export default function HomePage(): React.ReactElement {
     open()
   }
 
-  const handleJoinChat = (event: React.FormEvent): void => {
+  const handleJoinChat = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
     
     if (!tokenAddress.trim()) {
@@ -37,9 +39,12 @@ export default function HomePage(): React.ReactElement {
     <main className="min-h-screen bg-black p-4 md:p-6">
       <div className="max-w-xl mx-auto space-y-4 md:space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-3xl md:text-4xl font-mono text-green-500">
-            &gt;_ Token Terminal
-          </h1>
+          <div className="flex items-center gap-2">
+            <Terminal className="text-green-500 w-8 h-8" />
+            <h1 className="text-3xl md:text-4xl font-mono text-green-500">
+              &gt;_ Token Terminal
+            </h1>
+          </div>
           <button
             onClick={handleConnect}
             className="w-full sm:w-auto bg-black border border-green-500 font-mono text-green-500 px-4 py-2 
@@ -49,12 +54,6 @@ export default function HomePage(): React.ReactElement {
               `ADDR: ${address?.slice(0, 4)}...${address?.slice(-4)}` : 
               'CONNECT_WALLET'}
           </button>
-        </div>
-
-        <div className="text-left mt-8 mb-8">
-          <p className="text-lg text-green-500/80">
-            {'>'} SELECT_TOKEN_ROOM
-          </p>
         </div>
 
         <div className="bg-black border border-green-500 p-4 md:p-6">
@@ -90,7 +89,9 @@ export default function HomePage(): React.ReactElement {
             </button>
           </form>
         </div>
+
+        <ActiveRooms />
       </div>
     </main>
-  );
+  )
 }

@@ -6,6 +6,7 @@ import { useAppKit } from "@reown/appkit/react"
 import { useAppKitAccount } from "@reown/appkit/react"
 import { Terminal } from 'lucide-react'
 import { ActiveRooms } from '@/components/ActiveRooms'
+import { TerminalTips } from '@/components/TerminalTips'
 
 export default function HomePage(): React.ReactElement {
   const router = useRouter()
@@ -42,7 +43,7 @@ export default function HomePage(): React.ReactElement {
           <div className="flex items-center gap-2">
             <Terminal className="text-green-500 w-8 h-8" />
             <h1 className="text-3xl md:text-4xl font-mono text-green-500">
-              &gt;_ Token Terminal
+              Token Terminal
             </h1>
           </div>
           <button
@@ -91,6 +92,7 @@ export default function HomePage(): React.ReactElement {
         </div>
 
         <ActiveRooms />
+        <TerminalTips />
       </div>
     </main>
   )

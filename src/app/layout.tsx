@@ -8,15 +8,21 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Token Terminal',
   description: 'Real-time token price tracking and discussion platform',
+  metadataBase: new URL('https://tr4de.fun'),  // Add your actual domain
   openGraph: {
     title: 'Token Terminal',
     description: 'Track token prices and discuss with other traders in real-time',
-    type: 'website'
+    type: 'website',
+    images: ['/og-image.png'],
   },
   icons: {
-    icon: '/favicon.ico'
-  }
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+  },
+  manifest: '/site.webmanifest',
 }
+
 export const viewport = 'width=device-width, initial-scale=1, maximum-scale=1';
 
 interface RootLayoutProps {
@@ -27,9 +33,11 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
   return (
     <html lang="en">
       <body className="min-h-screen bg-black font-mono text-green-500">
-        <AppKit>{children}</AppKit>
+        <AppKit>
+          {children}
+        </AppKit>
+        <Analytics/>
       </body>
-      <Analytics/>
     </html>
   )
 }

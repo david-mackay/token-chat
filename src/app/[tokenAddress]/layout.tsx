@@ -8,9 +8,9 @@ interface TokenLayoutProps {
 
 export default function TokenLayout({ children }: TokenLayoutProps): React.ReactElement {
   return (
-    <div className="flex flex-col h-screen bg-black">
-      {children}
-      <Analytics />
-    </div>
+        <div className="flex flex-col h-screen bg-black">
+              {children}
+              <Analytics />
+        </div>
   )
 }

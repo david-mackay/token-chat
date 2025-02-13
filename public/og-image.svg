@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#000000"/>
+  
+  <!-- Grid pattern -->
+  <path d="M0 0h1200v630H0z" fill="#000000" fill-opacity="0.9"/>
+  <path d="M0 63h1200M0 126h1200M0 189h1200M0 252h1200M0 315h1200M0 378h1200M0 441h1200M0 504h1200M0 567h1200" stroke="#00ff00" stroke-width="0.5" stroke-opacity="0.1"/>
+  <path d="M120 0v630M240 0v630M360 0v630M480 0v630M600 0v630M720 0v630M840 0v630M960 0v630M1080 0v630" stroke="#00ff00" stroke-width="0.5" stroke-opacity="0.1"/>
+  
+  <!-- Main Title -->
+  <text x="60" y="120" fill="#00ff00" font-family="monospace" font-size="64" font-weight="bold">Token Terminal</text>
+  
+  <!-- Terminal style prompt -->
+  <text x="60" y="220" fill="#00ff00" font-family="monospace" font-size="32">$ track solana_token</text>
+  
+  <!-- Simulated output -->
+  <text x="60" y="280" fill="#00ff00" font-family="monospace" font-size="28">Connecting to network...</text>
+  <text x="60" y="320" fill="#00ff00" font-family="monospace" font-size="28">Price feed initialized</text>
+  <text x="60" y="360" fill="#00ff00" font-family="monospace" font-size="28">Chat room active: 42 users online</text>
+  
+  <!-- Blinking cursor -->
+  <rect x="60" y="380" width="20" height="4" fill="#00ff00">
+    <animate attributeName="opacity" values="1;0;1" dur="1.5s" repeatCount="indefinite"/>
+  </rect>
+  
+  <!-- URL -->
+  <text x="60" y="560" fill="#00ff00" font-family="monospace" font-size="32">tr4de.fun</text>
+</svg>

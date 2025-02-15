@@ -15,6 +15,13 @@ export const metadata: Metadata = {
     type: 'website',
     images: ['/og-image.png'],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Token Terminal',
+    description: 'Track token prices and discuss with other traders in real-time',
+    images: ['/og-image.png'],
+    creator: '@tr4defun',
+  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

@@ -1,3 +1,5 @@
+import { Message } from "@/types/websocket";
+
 // src/utils/commands.ts
 export interface Command {
   name: string;
@@ -10,6 +12,7 @@ export interface Command {
 export interface CommandContext {
   tokenAddress: string;
   chain?: string;
+  messages?: Message[];
 }
 
 export const commands: { [key: string]: Command } = {
@@ -27,6 +30,44 @@ export const commands: { [key: string]: Command } = {
       const chain = context.chain || 'solana';
       const url = `https://www.birdeye.so/token/${context.tokenAddress}?chain=${chain}`;
       addLocalMessage(`Birdeye Chart: ${url}`);
+    }
+  },
+
+  list: {
+    name: 'list',
+    description: 'List all unique wallet addresses in chat',
+    usage: '/list',
+    isServerCommand: false,
+    execute: (_args: string[], addLocalMessage: (content: string) => void, context?: CommandContext) => {
+      if (!context?.messages) {
+        addLocalMessage('Error: Could not access chat messages');
+        return;
+      }
+  
+      // Get unique addresses and filter out SYSTEM messages
+      const uniqueWallets = [...new Set(
+        context.messages
+          .filter(msg => msg.walletAddress !== 'SYSTEM')
+          .map(msg => msg.walletAddress)
+      )];
+  
+      if (uniqueWallets.length === 0) {
+        addLocalMessage('No wallet addresses found in chat.');
+        return;
+      }
+  
+      // Format each wallet address with click-to-copy tags
+      const formattedWallets = uniqueWallets.map(wallet => {
+        return `<click-to-copy value="${wallet}">${wallet}</click-to-copy>`;
+      });
+  
+      // Join with newlines and add a header
+      const message = [
+        'Active wallets in chat:',
+        ...formattedWallets
+      ].join('\n');
+  
+      addLocalMessage(message);
     }
   },
 

@@ -1,19 +1,22 @@
 // src/components/Chat/MessageInput.tsx
 import React from 'react';
 import { processCommand } from '@/utils/commands';
+import { Message } from '@/types/websocket';
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;
   onLocalMessage: (content: string) => void;
   disabled: boolean;
   tokenAddress: string;
+  messages: Message[];
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({ 
   onSendMessage, 
   onLocalMessage,
   disabled,
-  tokenAddress 
+  tokenAddress,
+  messages 
 }) => {
   const [message, setMessage] = React.useState('');
 
@@ -24,7 +27,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         message.trim(), 
         onLocalMessage,
         onSendMessage,
-        { tokenAddress }
+        { 
+          tokenAddress,
+          messages // Pass messages through context
+        }
       );
       
       if (!isCommand) {

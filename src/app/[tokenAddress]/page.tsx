@@ -10,11 +10,11 @@ import { ChatWindow } from '@/components/Chat/ChatWindow'
 import { MessageInput } from '@/components/Chat/MessageInput'
 import { PriceDisplay } from '@/components/TokenPrice/PriceDisplay'
 import { generateColorFromAddress } from '@/utils/colorGeneration'
-import type { ChatMessage, LocalMessage } from '@/types/websocket'
 import { io, Socket } from 'socket.io-client'
+import { ChatMessage, Message } from '@/types/websocket'
 
 interface PageState {
-  messages: (ChatMessage | LocalMessage)[];
+  messages: Message[];
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   error: string | null;
   price: number | null;
@@ -82,7 +82,7 @@ export default function TokenChatPage(): React.ReactElement {
   }, [isConnected, address, walletProvider, tokenAddress]);
 
   const handleLocalMessage = (content: string) => {
-    const localMessage: LocalMessage = {
+    const localMessage: ChatMessage = {
       id: crypto.randomUUID(),
       content,
       walletAddress: 'SYSTEM',
@@ -305,6 +305,7 @@ export default function TokenChatPage(): React.ReactElement {
             onLocalMessage={handleLocalMessage}
             disabled={!isConnected || !socket || !pageState.sessionToken}
             tokenAddress={tokenAddress}
+            messages={pageState.messages}  // Pass messages from pageState
           />
         </div>
       )}

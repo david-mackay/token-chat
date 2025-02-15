@@ -1,20 +1,28 @@
+
 // src/types/websocket.ts
+
+export interface Message {
+  id: string;
+  content: string;
+  walletAddress: string;
+  timestamp: string;
+  colorCode?: string;
+  isLocal?: boolean;
+}
+
 export interface WebSocketMessage {
     type: 'chat' | 'price_update' | 'subscribe_token' | 'connection_established';
     data: ChatMessage | PriceUpdate | TokenSubscription | ConnectionStatus;
   }
   
-  export interface ChatMessage {
+  export interface ChatMessage extends Message{
     id: string;
     content: string;
     walletAddress: string;
     tokenAddress: string,
     timestamp: string;
     colorCode?: string;
-  }
-
-  export interface LocalMessage extends ChatMessage {
-    isLocal: true;
+    isLocal?: boolean;
   }
   
   export interface PriceUpdate {

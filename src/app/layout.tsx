@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { AppKit } from '../context/appkit'
+import { AppKit } from '@/context/appkit'
 import { Analytics } from "@vercel/analytics/react"
 
 import './globals.css'

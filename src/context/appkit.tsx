@@ -33,10 +33,10 @@ interface AppKitProps {
 const projectId = 'c2d62c326c8f0490623d8990db1984f2'
 
 const metadata: AppMetadata = {
-  name: 'Multi-Chain NFT Minter',
-  description: 'A dApp for minting NFTs on Ethereum and Solana',
-  url: 'https://your-website-url.com',
-  icons: ['https://your-icon-url.com/icon.png']
+  name: 'Token Terminal',
+  description: 'Track token prices and discuss in real time with other traders.',
+  url: 'https://tr4de.fun',
+  icons: ['https://tr4de.fun/og-image.png']
 }
 
 // Initialize Solana adapter with typed wallets
@@ -49,17 +49,16 @@ const solanaAdapter = new SolanaAdapter({
 
 // Create AppKit instance with typed configuration
 createAppKit({
-  adapters: [
-    solanaAdapter
-  ],
-  metadata: metadata,
-  networks: [
-    solana 
-  ],
+  adapters: [solanaAdapter],
   projectId,
+  networks: [solana],
+  metadata,
   features: {
-    analytics: true
-  } as AppKitFeatures
+    email: true, // default to true
+    socials: ['google', 'x', 'discord', 'farcaster', 'github', 'apple', 'facebook'],
+    emailShowWallets: true, // default to true    
+  },
+  allWallets: 'SHOW', // default to SHOW
 })
 
 // Export typed AppKit component

@@ -13,22 +13,12 @@ export interface CommandContext {
 }
 
 export const commands: { [key: string]: Command } = {
-  price: {
-    name: 'price',
-    description: 'Show current token price',
-    usage: '/price',
-    isServerCommand: true,
-    execute: (args: string[], addLocalMessage: (content: string) => void) => {
-      // This will be handled by the server since isServerCommand is true
-    }
-  },
-  
   chart: {
     name: 'chart',
     description: 'Get Birdeye chart link for the current token',
     usage: '/chart',
     isServerCommand: false,
-    execute: (args: string[], addLocalMessage: (content: string) => void, context?: CommandContext) => {
+    execute: (_args: string[], addLocalMessage: (content: string) => void, context?: CommandContext) => {
       if (!context?.tokenAddress) {
         addLocalMessage('Error: Token address not found');
         return;

@@ -39,6 +39,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps): React.ReactElement {
   return (
     <html lang="en">
+      <meta name="twitter:image" content="https://tr4de.fun/og-image.png" />
       <body className="min-h-screen bg-black font-mono text-green-500">
         <AppKit>
           {children}

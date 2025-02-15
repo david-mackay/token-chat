@@ -19,11 +19,6 @@ interface AppMetadata {
   icons: string[]
 }
 
-// Define types for AppKit features
-interface AppKitFeatures {
-  analytics: boolean
-}
-
 // Define type for AppKit props
 interface AppKitProps {
   children: ReactNode

@@ -12,6 +12,10 @@ export interface WebSocketMessage {
     timestamp: string;
     colorCode?: string;
   }
+
+  export interface LocalMessage extends ChatMessage {
+    isLocal: true;
+  }
   
   export interface PriceUpdate {
     tokenAddress: string;

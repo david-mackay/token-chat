@@ -1,18 +1,36 @@
 // src/components/Chat/MessageInput.tsx
 import React from 'react';
+import { processCommand } from '../../utils/commands';
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;
+  onLocalMessage: (content: string) => void;
   disabled: boolean;
+  tokenAddress: string;
 }
 
-export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled }) => {
+export const MessageInput: React.FC<MessageInputProps> = ({ 
+  onSendMessage, 
+  onLocalMessage,
+  disabled,
+  tokenAddress 
+}) => {
   const [message, setMessage] = React.useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
+      const isCommand = processCommand(
+        message.trim(), 
+        onLocalMessage,
+        onSendMessage,
+        { tokenAddress }
+      );
+      
+      if (!isCommand) {
+        onSendMessage(message.trim());
+      }
+      
       setMessage('');
     }
   };
@@ -25,7 +43,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disab
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={disabled}
-          placeholder={disabled ? "CONNECTION_REQUIRED" : "ENTER_COMMAND >_"}
+          placeholder={disabled ? "CONNECTION_REQUIRED" : "Type a message or /help for commands"}
           className="flex-1 p-2 bg-black border border-green-500 text-green-500 font-mono 
                    placeholder:text-green-500/50 focus:outline-none focus:ring-1 
                    focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"

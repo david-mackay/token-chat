@@ -10,11 +10,11 @@ import { ChatWindow } from '@/components/Chat/ChatWindow'
 import { MessageInput } from '@/components/Chat/MessageInput'
 import { PriceDisplay } from '@/components/TokenPrice/PriceDisplay'
 import { generateColorFromAddress } from '@/utils/colorGeneration'
-import type { ChatMessage } from '@/types/websocket'
+import type { ChatMessage, LocalMessage } from '@/types/websocket'
 import { io, Socket } from 'socket.io-client'
 
 interface PageState {
-  messages: ChatMessage[];
+  messages: (ChatMessage | LocalMessage)[];
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   error: string | null;
   price: number | null;
@@ -80,6 +80,23 @@ export default function TokenChatPage(): React.ReactElement {
       return null;
     }
   }, [isConnected, address, walletProvider, tokenAddress]);
+
+  const handleLocalMessage = (content: string) => {
+    const localMessage: LocalMessage = {
+      id: crypto.randomUUID(),
+      content,
+      walletAddress: 'SYSTEM',
+      tokenAddress: tokenAddress,
+      timestamp: new Date().toISOString(),
+      isLocal: true,
+      colorCode: generateColorFromAddress('SYSTEM')
+    };
+  
+    setPageState(prev => ({
+      ...prev,
+      messages: [...prev.messages, localMessage]
+    }));
+  };
 
   // Handle initial authentication when wallet connects
   useEffect(() => {
@@ -283,9 +300,11 @@ export default function TokenChatPage(): React.ReactElement {
               isLoading={pageState.connectionStatus === 'connecting'}
             />
           </div>
-          <MessageInput
+          <MessageInput 
             onSendMessage={handleSendMessage}
-            disabled={pageState.connectionStatus !== 'connected' || !pageState.sessionToken}
+            onLocalMessage={handleLocalMessage}
+            disabled={!isConnected || !socket || !pageState.sessionToken}
+            tokenAddress={tokenAddress}
           />
         </div>
       )}

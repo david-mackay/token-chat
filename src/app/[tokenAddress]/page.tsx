@@ -8,10 +8,10 @@ import { useAppKitProvider } from '@reown/appkit/react'
 import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { ChatWindow } from '@/components/Chat/ChatWindow'
 import { MessageInput } from '@/components/Chat/MessageInput'
-import { PriceDisplay } from '@/components/TokenPrice/PriceDisplay'
 import { generateColorFromAddress } from '@/utils/colorGeneration'
 import { io, Socket } from 'socket.io-client'
 import { ChatMessage, Message } from '@/types/websocket'
+import { Header } from '@/components/Header/Header';
 
 interface PageState {
   messages: Message[];
@@ -263,7 +263,7 @@ export default function TokenChatPage(): React.ReactElement {
     <div className="flex flex-col h-screen">
       {/* Sticky Header with Price Display */}
       <div className="sticky top-0 z-10 border-b border-green-500 bg-black">
-        <PriceDisplay
+        <Header
           tokenAddress={tokenAddress}
           price={pageState.price}
           connectionStatus={pageState.connectionStatus}

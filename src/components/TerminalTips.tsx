@@ -4,47 +4,47 @@ import React, { useState, useEffect } from 'react'
 import { Terminal } from 'lucide-react'
 
 const tips = [
-    {
-      command: "sys.help.security",
-      message: "All messages are cryptographically signed and verified via wallet signature. Not even the NSA can impersonate your meme commentary."
-    },
-    {
-      command: "sys.help.navigation",
-      message: "Navigate to any token chat by entering its address in the terminal prompt above. Example: So11111111111111111111111111111111111111112"
-    },
-    {
-        command: "sys.help.efficiency",
-        message: "Running lean and mean on minimal infrastructure. This terminal was built with the same budget as a cup of coffee, but it works twice as hard."
-      },
-    {
-      command: "sys.help.connection",
-      message: "Establish secure connection by authenticating your wallet using the CONNECT_WALLET protocol in the top right corner."
-    },
-    {
-      command: "sys.help.messages",
-      message: "Transmit messages in real-time once connected. All communications are identifiable only by your wallet address."
-    },
-    {
-      command: "sys.help.rooms",
-      message: "View active discussion channels above. Join existing rooms or initialize new ones by entering token addresses."
-    },
-    {
-      command: "sys.help.pricing",
-      message: "Monitor token metrics in real-time. Price data updates automatically every 10 minutes via secure oracle integration."
-    },
-    {
-      command: "sys.help.improvements",
-      message: "More frequent price updates will be available the more popular the protocol becomes. At 30 concurrent users the dev will spoil me with an extra 512mb of RAM."
-    },
-    {
-      command: "sys.help.persistence",
-      message: "Messages are stored in a military-grade AWS database. They'll survive until Jeff Bezos decides to turn off the internet."
-    },
-    {
-      command: "sys.help.etiquette",
-      message: "Keep discussions civil and on-topic. Remember: your wallet history and your chat history are both permanent on-chain features."
-    },
-  ];
+  {
+    command: "sys.manifest.intro",
+    message: "Welcome to the future of trading floors - where the coffee's virtual but the gains are real. Remember those scenes of traders shouting across rooms? We've rebuilt that energy, minus the throat lozenges."
+  },
+  {
+    command: "sys.manifest.security",
+    message: "Your voice is your wallet signature. Every message is cryptographically signed, making this chat more secure than a bunker full of gold-plated hard drives."
+  },
+  {
+    command: "sys.manifest.accessibility",
+    message: "No more velvet ropes or fancy suits. Access any token's trading floor by simply entering its address. The entire crypto market, one terminal away."
+  },
+  {
+    command: "sys.manifest.infrastructure",
+    message: "Built with the budget of an artisanal coffee, running with the efficiency of a caffeinated quant. Minimal infrastructure, maximum impact."
+  },
+  {
+    command: "sys.manifest.realtime",
+    message: "Connect your wallet to join the floor. Experience real-time price updates and market chatter from traders who eat, sleep, and breathe this token."
+  },
+  {
+    command: "sys.manifest.community",
+    message: "Each token address is its own trading pit. Join the veterans or start fresh conversations in unexplored markets. The next big alpha could be one chat away."
+  },
+  {
+    command: "sys.manifest.data",
+    message: "Price feeds update every 10 minutes through battle-tested oracles. As more traders join the floor, we'll upgrade our systems. Think of it as Moore's Law for market data."
+  },
+  {
+    command: "sys.manifest.storage",
+    message: "Every insight and call is preserved in AWS's digital vault. Your trading floor banter will outlive most blockchain projects."
+  },
+  {
+    command: "sys.manifest.culture",
+    message: "Trade ideas, not insults. Your wallet and chat history are permanent features of the blockchain - make them tell a story worth reading."
+  },
+  {
+    command: "sys.manifest.future",
+    message: "This is more than a chat room - it's the digital reincarnation of the trading floor culture that built Wall Street, reimagined for the future of finance."
+  }
+];
 
 export function TerminalTips(): React.ReactElement {
   const [currentTipIndex, setCurrentTipIndex] = useState<number>(0);

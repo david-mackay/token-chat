@@ -12,6 +12,13 @@ interface RoomStats {
   lastPrice?: number;
 }
 
+interface TokenInfo {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+}
+
 interface TerminalLineProps {
   text: string;
   isTyping?: boolean;
@@ -48,7 +55,6 @@ const TerminalLine: React.FC<TerminalLineProps> = ({ text, isTyping, onComplete 
 export function ActiveRooms(): React.ReactElement {
   const [rooms, setRooms] = useState<RoomStats[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0);
 
   const messages = [
@@ -57,24 +63,100 @@ export function ActiveRooms(): React.ReactElement {
     "FETCHING PRICE DATA..."
   ];
 
+  const defaultSolanaRoom: RoomStats = {
+    tokenAddress: "So11111111111111111111111111111111111111112",
+    userCount: 3,
+    tokenName: "Wrapped SOL",
+    tokenSymbol: "SOL",
+    lastPrice: 0
+  };
+
   useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchTokenData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/active-rooms`);
-        if (!response.ok) throw new Error('Failed to fetch active rooms');
+        // First get connected users from our server
+        const activeUsersResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/active-rooms`);
+        if (!activeUsersResponse.ok) throw new Error('Failed to fetch active users');
+        const activeUsersData = await activeUsersResponse.json();
         
-        const data = await response.json();
-        setRooms(data.rooms.sort((a: RoomStats, b: RoomStats) => b.userCount - a.userCount));
+        // Get all unique token addresses including default SOL
+        const tokenAddresses = new Set([
+          defaultSolanaRoom.tokenAddress,
+          ...activeUsersData.rooms.map((room: RoomStats) => room.tokenAddress)
+        ]);
+
+        // Convert addresses to comma-separated string and encode
+        const addressesString = Array.from(tokenAddresses).join(',');
+        const encodedAddresses = encodeURIComponent(addressesString);
+
+        // Fetch token info and prices in parallel
+        const [tokenInfoResponse, priceResponse] = await Promise.all([
+          fetch(`https://api-v3.raydium.io/mint/ids?mints=${encodedAddresses}`),
+          fetch(`https://api-v3.raydium.io/mint/price?mints=${encodedAddresses}`)
+        ]);
+
+        if (!tokenInfoResponse.ok || !priceResponse.ok) {
+          throw new Error('Failed to fetch token data');
+        }
+
+        const tokenInfoData = await tokenInfoResponse.json();
+        const priceData = await priceResponse.json();
+
+        // Create a map of token info
+        const tokenInfoMap = tokenInfoData.data.reduce((acc: Record<string, TokenInfo>, token: TokenInfo) => {
+          acc[token.address] = token;
+          return acc;
+        }, {});
+
+        // Combine all data
+        let finalRooms = activeUsersData.rooms.map((room: RoomStats) => ({
+          ...room,
+          tokenName: tokenInfoMap[room.tokenAddress]?.name,
+          tokenSymbol: tokenInfoMap[room.tokenAddress]?.symbol,
+          lastPrice: Number(priceData.data[room.tokenAddress] || 0)
+        }));
+
+        // Add SOL room if it doesn't exist
+        const solRoomExists = finalRooms.some(
+          (          room: { tokenAddress: string; }) => room.tokenAddress.toLowerCase() === defaultSolanaRoom.tokenAddress.toLowerCase()
+        );
+
+        if (!solRoomExists) {
+          finalRooms = [{
+            ...defaultSolanaRoom,
+            lastPrice: Number(priceData.data[defaultSolanaRoom.tokenAddress] || 0)
+          }, ...finalRooms];
+        }
+
+        setRooms(finalRooms.sort((a: { userCount: number; }, b: { userCount: number; }) => b.userCount - a.userCount));
       } catch (err) {
-        setError('ERROR: FAILED TO FETCH ROOM DATA');
-        console.error('Error fetching rooms:', err);
+        console.error('Error fetching data:', err);
+        // Even in error case, try to get SOL price
+        try {
+          const solAddress = defaultSolanaRoom.tokenAddress;
+          const encodedSolAddress = encodeURIComponent(solAddress);
+          const solPriceResponse = await fetch(`https://api-v3.raydium.io/mint/price?mints=${encodedSolAddress}`);
+          
+          if (solPriceResponse.ok) {
+            const solPriceData = await solPriceResponse.json();
+            setRooms([{
+              ...defaultSolanaRoom,
+              lastPrice: Number(solPriceData.data[solAddress] || 0)
+            }]);
+          } else {
+            setRooms([defaultSolanaRoom]);
+          }
+        } catch (priceErr) {
+          console.error('Error fetching SOL price:', priceErr);
+          setRooms([defaultSolanaRoom]);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRooms();
-  }, []);
+    fetchTokenData();
+  }, [defaultSolanaRoom]); // Added defaultSolanaRoom to dependencies
 
   const handleNextMessage = () => {
     if (currentMessageIndex < messages.length - 1) {
@@ -88,14 +170,6 @@ export function ActiveRooms(): React.ReactElement {
       `$${price.toExponential(2)}` : 
       `$${price.toFixed(2)}`;
   };
-
-  if (error) {
-    return (
-      <div className="bg-black border border-red-500 p-4 md:p-6">
-        <div className="text-red-500 font-mono">{error}</div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-black border border-green-500 p-4 md:p-6">
@@ -114,7 +188,7 @@ export function ActiveRooms(): React.ReactElement {
               onComplete={handleNextMessage}
             />
           ))
-        ) : rooms.length > 0 ? (
+        ) : (
           <div className="space-y-2">
             {rooms.map((room) => (
               <Link 
@@ -144,8 +218,6 @@ export function ActiveRooms(): React.ReactElement {
               </Link>
             ))}
           </div>
-        ) : (
-          <div className="text-green-500/50">NO ACTIVE ROOMS FOUND</div>
         )}
       </div>
     </div>

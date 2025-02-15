@@ -1,6 +1,6 @@
 // src/components/Chat/MessageInput.tsx
 import React from 'react';
-import { processCommand } from '../../utils/commands';
+import { processCommand } from '@/utils/commands';
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;

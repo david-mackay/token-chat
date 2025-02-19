@@ -25,6 +25,21 @@ interface TerminalLineProps {
   onComplete?: () => void;
 }
 
+// Moved outside component to prevent recreation on render
+const DEFAULT_SOLANA_ROOM: RoomStats = {
+  tokenAddress: "So11111111111111111111111111111111111111112",
+  userCount: 3,
+  tokenName: "Wrapped SOL",
+  tokenSymbol: "SOL",
+  lastPrice: 0
+};
+
+const LOADING_MESSAGES = [
+  "SCANNING NETWORK FOR ACTIVE ROOMS...",
+  "RETRIEVING USER STATISTICS...",
+  "FETCHING PRICE DATA..."
+];
+
 const TerminalLine: React.FC<TerminalLineProps> = ({ text, isTyping, onComplete }) => {
   const [displayedText, setDisplayedText] = useState<string>('');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -57,20 +72,6 @@ export function ActiveRooms(): React.ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0);
 
-  const messages = [
-    "SCANNING NETWORK FOR ACTIVE ROOMS...",
-    "RETRIEVING USER STATISTICS...",
-    "FETCHING PRICE DATA..."
-  ];
-
-  const defaultSolanaRoom: RoomStats = {
-    tokenAddress: "So11111111111111111111111111111111111111112",
-    userCount: 3,
-    tokenName: "Wrapped SOL",
-    tokenSymbol: "SOL",
-    lastPrice: 0
-  };
-
   useEffect(() => {
     const fetchTokenData = async () => {
       try {
@@ -81,7 +82,7 @@ export function ActiveRooms(): React.ReactElement {
         
         // Get all unique token addresses including default SOL
         const tokenAddresses = new Set([
-          defaultSolanaRoom.tokenAddress,
+          DEFAULT_SOLANA_ROOM.tokenAddress,
           ...activeUsersData.rooms.map((room: RoomStats) => room.tokenAddress)
         ]);
 
@@ -118,13 +119,13 @@ export function ActiveRooms(): React.ReactElement {
 
         // Add SOL room if it doesn't exist
         const solRoomExists = finalRooms.some(
-          (          room: { tokenAddress: string; }) => room.tokenAddress.toLowerCase() === defaultSolanaRoom.tokenAddress.toLowerCase()
+          (          room: { tokenAddress: string; }) => room.tokenAddress.toLowerCase() === DEFAULT_SOLANA_ROOM.tokenAddress.toLowerCase()
         );
 
         if (!solRoomExists) {
           finalRooms = [{
-            ...defaultSolanaRoom,
-            lastPrice: Number(priceData.data[defaultSolanaRoom.tokenAddress] || 0)
+            ...DEFAULT_SOLANA_ROOM,
+            lastPrice: Number(priceData.data[DEFAULT_SOLANA_ROOM.tokenAddress] || 0)
           }, ...finalRooms];
         }
 
@@ -133,22 +134,22 @@ export function ActiveRooms(): React.ReactElement {
         console.error('Error fetching data:', err);
         // Even in error case, try to get SOL price
         try {
-          const solAddress = defaultSolanaRoom.tokenAddress;
+          const solAddress = DEFAULT_SOLANA_ROOM.tokenAddress;
           const encodedSolAddress = encodeURIComponent(solAddress);
           const solPriceResponse = await fetch(`https://api-v3.raydium.io/mint/price?mints=${encodedSolAddress}`);
           
           if (solPriceResponse.ok) {
             const solPriceData = await solPriceResponse.json();
             setRooms([{
-              ...defaultSolanaRoom,
+              ...DEFAULT_SOLANA_ROOM,
               lastPrice: Number(solPriceData.data[solAddress] || 0)
             }]);
           } else {
-            setRooms([defaultSolanaRoom]);
+            setRooms([DEFAULT_SOLANA_ROOM]);
           }
         } catch (priceErr) {
           console.error('Error fetching SOL price:', priceErr);
-          setRooms([defaultSolanaRoom]);
+          setRooms([DEFAULT_SOLANA_ROOM]);
         }
       } finally {
         setIsLoading(false);
@@ -156,10 +157,10 @@ export function ActiveRooms(): React.ReactElement {
     };
 
     fetchTokenData();
-  }, [defaultSolanaRoom]); // Added defaultSolanaRoom to dependencies
+  }, []); // Removed defaultSolanaRoom from dependencies
 
   const handleNextMessage = () => {
-    if (currentMessageIndex < messages.length - 1) {
+    if (currentMessageIndex < LOADING_MESSAGES.length - 1) {
       setCurrentMessageIndex(prev => prev + 1);
     }
   };
@@ -180,7 +181,7 @@ export function ActiveRooms(): React.ReactElement {
 
       <div className="space-y-4 font-mono">
         {isLoading ? (
-          messages.slice(0, currentMessageIndex + 1).map((msg, index) => (
+          LOADING_MESSAGES.slice(0, currentMessageIndex + 1).map((msg, index) => (
             <TerminalLine
               key={index}
               text={msg}

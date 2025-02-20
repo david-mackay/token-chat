@@ -7,18 +7,18 @@ import MatrixRain from '@/components/Visuals/MatrixRain'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'TR4DE Terminal',
+  title: 'TR4DE',
   description: 'Real-time token price tracking and discussion platform',
   metadataBase: new URL('https://tr4de.fun'),
   openGraph: {
-    title: 'TR4DE Terminal',
+    title: 'TR4DE',
     description: 'Track token prices and discuss with other traders in real-time',
     type: 'website',
     images: ['/og-image.png'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TR4DE Terminal',
+    title: 'TR4DE',
     description: 'Track token prices and discuss with other traders in real-time',
     images: ['/og-image.png'],
     creator: '@tr4defun',

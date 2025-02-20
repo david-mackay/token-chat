@@ -2,13 +2,14 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { AppKit } from '@/context/appkit'
 import { Analytics } from "@vercel/analytics/react"
+import MatrixRain from '@/components/Visuals/MatrixRain'
 
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Token Terminal',
   description: 'Real-time token price tracking and discussion platform',
-  metadataBase: new URL('https://tr4de.fun'),  // Add your actual domain
+  metadataBase: new URL('https://tr4de.fun'),
   openGraph: {
     title: 'Token Terminal',
     description: 'Track token prices and discuss with other traders in real-time',
@@ -41,8 +42,11 @@ export default function RootLayout({ children }: RootLayoutProps): React.ReactEl
     <html lang="en">
       <meta name="twitter:image" content="https://tr4de.fun/og-image.png" />
       <body className="min-h-screen bg-black font-mono text-green-500">
+        <MatrixRain />
         <AppKit>
-          {children}
+          <main className="z-10 block contents">
+            {children}
+          </main>
         </AppKit>
         <Analytics/>
       </body>

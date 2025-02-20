@@ -51,9 +51,16 @@ createAppKit({
   features: {
     email: true, // default to true
     socials: ['google', 'x', 'discord', 'farcaster', 'github', 'apple', 'facebook'],
-    emailShowWallets: true, // default to true    
   },
   allWallets: 'SHOW', // default to SHOW
+  themeVariables: {
+    '--w3m-accent': '#22c55e',
+    '--w3m-color-mix': '#000000',
+    '--w3m-color-mix-strength': 100,
+    '--w3m-font-family': 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    '--w3m-border-radius-master': '0px',
+    '--w3m-z-index': 50,
+  }
 })
 
 // Export typed AppKit component

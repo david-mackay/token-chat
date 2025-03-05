@@ -3,36 +3,14 @@
 import React, { useState, useEffect } from 'react'
 import { Terminal, Users } from 'lucide-react'
 import Link from 'next/link'
-
-interface RoomStats {
-  tokenAddress: string;
-  userCount: number;
-  tokenName?: string;
-  tokenSymbol?: string;
-  lastPrice?: number;
-}
-
-interface TokenInfo {
-  address: string;
-  symbol: string;
-  name: string;
-  decimals: number;
-}
+import { DEFAULT_ROOMS } from '../config'
+import { RoomStats, TokenInfo } from '@/types/componentdata'
 
 interface TerminalLineProps {
   text: string;
   isTyping?: boolean;
   onComplete?: () => void;
 }
-
-// Moved outside component to prevent recreation on render
-const DEFAULT_SOLANA_ROOM: RoomStats = {
-  tokenAddress: "So11111111111111111111111111111111111111112",
-  userCount: 3,
-  tokenName: "Wrapped SOL",
-  tokenSymbol: "SOL",
-  lastPrice: 0
-};
 
 const LOADING_MESSAGES = [
   "SCANNING NETWORK FOR ACTIVE ROOMS...",
@@ -80,9 +58,9 @@ export function ActiveRooms(): React.ReactElement {
         if (!activeUsersResponse.ok) throw new Error('Failed to fetch active users');
         const activeUsersData = await activeUsersResponse.json();
         
-        // Get all unique token addresses including default SOL
+        // Get all unique token addresses including default rooms
         const tokenAddresses = new Set([
-          DEFAULT_SOLANA_ROOM.tokenAddress,
+          ...DEFAULT_ROOMS.map(room => room.tokenAddress),
           ...activeUsersData.rooms.map((room: RoomStats) => room.tokenAddress)
         ]);
 
@@ -110,46 +88,51 @@ export function ActiveRooms(): React.ReactElement {
         }, {});
 
         // Combine all data
-        let finalRooms = activeUsersData.rooms.map((room: RoomStats) => ({
+        const finalRooms = activeUsersData.rooms.map((room: RoomStats) => ({
           ...room,
           tokenName: tokenInfoMap[room.tokenAddress]?.name,
           tokenSymbol: tokenInfoMap[room.tokenAddress]?.symbol,
-          lastPrice: Number(priceData.data[room.tokenAddress] || 0)
+          lastPrice: Number(priceData.data[room.tokenAddress] || 0),
+          isExtraActive: room.userCount > 10 // Example condition for extra active rooms
         }));
 
-        // Add SOL room if it doesn't exist
-        const solRoomExists = finalRooms.some(
-          (          room: { tokenAddress: string; }) => room.tokenAddress.toLowerCase() === DEFAULT_SOLANA_ROOM.tokenAddress.toLowerCase()
-        );
+        // Add default rooms if they don't exist
+        DEFAULT_ROOMS.forEach(defaultRoom => {
+          const roomExists = finalRooms.some(
+            (room: { tokenAddress: string; }) => room.tokenAddress.toLowerCase() === defaultRoom.tokenAddress.toLowerCase()
+          );
 
-        if (!solRoomExists) {
-          finalRooms = [{
-            ...DEFAULT_SOLANA_ROOM,
-            lastPrice: Number(priceData.data[DEFAULT_SOLANA_ROOM.tokenAddress] || 0)
-          }, ...finalRooms];
-        }
+          if (!roomExists) {
+            finalRooms.push({
+              ...defaultRoom,
+              lastPrice: Number(priceData.data[defaultRoom.tokenAddress] || 0),
+              isExtraActive: defaultRoom.userCount > 10 // Example condition for extra active rooms
+            });
+          }
+        });
 
         setRooms(finalRooms.sort((a: { userCount: number; }, b: { userCount: number; }) => b.userCount - a.userCount));
       } catch (err) {
         console.error('Error fetching data:', err);
-        // Even in error case, try to get SOL price
+        // Even in error case, try to get default room prices
         try {
-          const solAddress = DEFAULT_SOLANA_ROOM.tokenAddress;
-          const encodedSolAddress = encodeURIComponent(solAddress);
-          const solPriceResponse = await fetch(`https://api-v3.raydium.io/mint/price?mints=${encodedSolAddress}`);
+          const defaultRoomAddresses = DEFAULT_ROOMS.map(room => room.tokenAddress);
+          const encodedDefaultRoomAddresses = encodeURIComponent(defaultRoomAddresses.join(','));
+          const defaultRoomPriceResponse = await fetch(`https://api-v3.raydium.io/mint/price?mints=${encodedDefaultRoomAddresses}`);
           
-          if (solPriceResponse.ok) {
-            const solPriceData = await solPriceResponse.json();
-            setRooms([{
-              ...DEFAULT_SOLANA_ROOM,
-              lastPrice: Number(solPriceData.data[solAddress] || 0)
-            }]);
+          if (defaultRoomPriceResponse.ok) {
+            const defaultRoomPriceData = await defaultRoomPriceResponse.json();
+            setRooms(DEFAULT_ROOMS.map(room => ({
+              ...room,
+              lastPrice: Number(defaultRoomPriceData.data[room.tokenAddress] || 0),
+              isExtraActive: room.userCount > 10 // Example condition for extra active rooms
+            })));
           } else {
-            setRooms([DEFAULT_SOLANA_ROOM]);
+            setRooms(DEFAULT_ROOMS);
           }
         } catch (priceErr) {
-          console.error('Error fetching SOL price:', priceErr);
-          setRooms([DEFAULT_SOLANA_ROOM]);
+          console.error('Error fetching default room prices:', priceErr);
+          setRooms(DEFAULT_ROOMS);
         }
       } finally {
         setIsLoading(false);
@@ -196,23 +179,23 @@ export function ActiveRooms(): React.ReactElement {
                 key={room.tokenAddress}
                 href={`/${room.tokenAddress}`}
               >
-                <div className="flex items-center justify-between p-2 border border-green-500/30 
-                              hover:border-green-500 transition-colors cursor-pointer">
+                <div className={`flex items-center justify-between p-2 border border-green-500 hover:border-green-500 transition-colors cursor-pointer`}>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <Users className="text-green-500 w-4 h-4" />
-                      <span className="text-green-500">{room.userCount}</span>
+                      <Users className={`w-4 h-4 ${room.isExtraActive ? 'text-red-500 animate-pulse' : 'text-green-500'}`} />
+                      <span className={room.isExtraActive ? 'rainbow-text' : 'text-green-500'}>{room.userCount}</span>
                     </div>
                     <div>
-                      <span className="text-green-500">
+                      <span className={room.isExtraActive ? 'rainbow-text' : 'text-green-500'}>
                         {room.tokenSymbol || room.tokenAddress.slice(0, 4)}
                       </span>
-                      <span className="text-green-500/50 text-sm ml-2">
+                      <span className={`text-sm ml-2 ${room.isExtraActive ? 'rainbow-text' : 'text-green-500'}`}>
                         {formatPrice(room.lastPrice)}
                       </span>
                     </div>
+                    {room.isExtraActive && <span className="ml-2 text-red-500">🔥</span>}
                   </div>
-                  <span className="text-green-500/30 text-xs">
+                  <span className={`text-green-500/30 text-xs ${room.isExtraActive ? 'rainbow-text' : 'text-green-500'}`}>
                     {room.tokenAddress.slice(0, 4)}...{room.tokenAddress.slice(-4)}
                   </span>
                 </div>
